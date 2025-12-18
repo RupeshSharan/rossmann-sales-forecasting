@@ -3,7 +3,6 @@
 An end-to-end **time-series forecasting project** built on Rossmann retail sales data.
 The project covers **data analysis, forecasting, evaluation, visualization, and deployment**, following industry-standard practices.
 
----
 
 ## 🚀 Project Overview
 
@@ -16,13 +15,11 @@ Retail businesses rely heavily on accurate demand forecasting for:
 This project analyzes historical daily sales data from Rossmann stores and builds multiple forecasting models to predict future sales.
 The final solution is deployed as an **interactive Streamlit application** for real-time forecasting.
 
----
 
 ## 🧠 Business Problem
 
 > How can we accurately forecast daily retail sales while accounting for seasonality, promotions, and store-level variations?
 
----
 
 ## 🎯 Objectives
 
@@ -33,7 +30,6 @@ The final solution is deployed as an **interactive Streamlit application** for r
 * Communicate insights via Tableau dashboards
 * Deploy forecasts through a Streamlit web app
 
----
 
 ## 🗂️ Project Structure
 
@@ -61,8 +57,6 @@ rossmann-sales-forecasting/
 └── requirements.txt
 ```
 
----
-
 ## 📊 Exploratory Data Analysis (EDA)
 
 ### Key Findings
@@ -72,7 +66,6 @@ rossmann-sales-forecasting/
 * **Promotions significantly increase sales**
 * Store characteristics (type & assortment) affect sales behavior
 
----
 
 ## 📸 Project Screenshots
 
@@ -84,7 +77,6 @@ rossmann-sales-forecasting/
 
 ![Prophet Forecast](screenshots/forecast_prophet.png)
 
----
 
 ### Tableau Dashboards
 
@@ -92,7 +84,6 @@ rossmann-sales-forecasting/
 
 ![Promotion & Holiday Impact](screenshots/tableau_dashboard_2.png)
 
----
 
 ## 🧪 Forecasting Models
 
@@ -113,7 +104,6 @@ All models were evaluated using a **time-based train–test split** to avoid dat
 * RMSE (Root Mean Squared Error)
 * MAPE (Mean Absolute Percentage Error)
 
----
 
 ## 🏆 Model Performance Summary
 
@@ -133,8 +123,6 @@ All models were evaluated using a **time-based train–test split** to avoid dat
 * Stable and interpretable
 * Suitable for production deployment
 
----
-
 ## 🔮 Streamlit Application
 
 The Streamlit app allows users to:
@@ -147,7 +135,6 @@ The Streamlit app allows users to:
 
 > The app operationalizes the forecasting models into a usable business tool.
 
----
 
 ## 🛠️ Tools & Technologies
 
@@ -157,7 +144,6 @@ The Streamlit app allows users to:
 * **Deployment**: Streamlit
 * **Version Control**: Git & GitHub
 
----
 
 ## ⚠️ Limitations
 
@@ -165,7 +151,6 @@ The Streamlit app allows users to:
 * External factors (weather, macroeconomic data) are not included
 * Long-term promotions are simplified
 
----
 
 ## 🔮 Future Improvements
 
@@ -174,14 +159,12 @@ The Streamlit app allows users to:
 * Rolling-window cross-validation
 * Full cloud deployment with automated retraining
 
----
 
 ## 👤 Author
 
 **Rupesh Sharan**
 GitHub: [https://github.com/RupeshSharan](https://github.com/RupeshSharan)
 
----
 
 ## 📌 Final Note
 
