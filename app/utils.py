@@ -1,19 +1,21 @@
 import pandas as pd
 import joblib
-import os
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_PATH = Path(__file__).resolve().parent.parent
 
 def load_data():
-    data_path = os.path.join(BASE_DIR, "..", "data", "processed", "rossmann_features.csv")
-    df = pd.read_csv(data_path)
-    df["Date"] = pd.to_datetime(df["Date"])
-    return df
+    return pd.read_csv(
+        BASE_PATH / "data/processed/rossmann_features.csv",
+        parse_dates=["Date"]
+    )
 
 def load_sarima():
-    model_path = os.path.join(BASE_DIR, "..", "models", "sarima", "sarima_model.pkl")
-    return joblib.load(model_path)
+    return joblib.load(
+        BASE_PATH / "models/sarima/sarima_model.pkl"
+    )
 
 def load_prophet():
-    model_path = os.path.join(BASE_DIR, "..", "models", "prophet", "prophet_model.pkl")
-    return joblib.load(model_path)
+    return joblib.load(
+        BASE_PATH / "models/prophet/prophet_model.pkl"
+    )
