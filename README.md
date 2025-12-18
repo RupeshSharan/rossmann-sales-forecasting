@@ -31,32 +31,6 @@ The final solution is deployed as an **interactive Streamlit application** for r
 * Deploy forecasts through a Streamlit web app
 
 
-## 🗂️ Project Structure
-
-```
-rossmann-sales-forecasting/
-│
-├── app/                 # Streamlit application
-│   ├── app.py
-│   └── utils.py
-│
-├── data/
-│   └── processed/
-│       └── rossmann_features.csv
-│
-├── models/
-│   ├── sarima/
-│   │   └── sarima_model.pkl
-│   └── prophet/
-│       └── prophet_model.pkl
-│
-├── notebooks/           # Step-by-step notebooks
-├── tableau/             # Tableau dashboards
-├── screenshots/         # Project screenshots
-├── README.md
-└── requirements.txt
-```
-
 ## 📊 Exploratory Data Analysis (EDA)
 
 ### Key Findings
