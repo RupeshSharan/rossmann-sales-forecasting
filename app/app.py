@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 from utils import load_data, load_sarima, load_prophet
+from clustering import cluster_stores
+from simulation import apply_holiday_uplift
 
 # --------------------------------------------------
 # PAGE CONFIG
@@ -17,13 +19,7 @@ st.set_page_config(
 # HEADER
 # --------------------------------------------------
 st.title("📈 Retail Sales Forecasting Dashboard")
-st.markdown(
-    """
-    **Business-ready sales forecasting application**  
-    Built using **SARIMA** (best accuracy) and **Prophet** (business-friendly) models  
-    on Rossmann retail sales data.
-    """
-)
+st.markdown("Business-ready forecasting system for retail demand planning.")
 
 st.divider()
 
@@ -45,20 +41,36 @@ store_id = st.sidebar.selectbox(
 horizon = st.sidebar.slider(
     "Forecast Horizon (days)",
     min_value=7,
-    max_value=42,
-    step=7
+    max_value=365,
+    step=7,
+    value=30
+)
+
+history_window = st.sidebar.slider(
+    "Show last N days of history",
+    min_value=30,
+    max_value=365,
+    step=30,
+    value=90
 )
 
 model_choice = st.sidebar.radio(
     "Forecasting Model",
-    ["SARIMA (Best Accuracy)", "Prophet (Business Friendly)"]
+    ["SARIMA", "Prophet"]
 )
 
-st.sidebar.markdown("---")
-st.sidebar.info(
-    "SARIMA is recommended for deployment due to lowest forecast error.\n\n"
-    "Prophet is useful for interpretability and stakeholder communication."
-)
+simulate_holiday = st.sidebar.checkbox("Simulate Holiday Impact")
+
+holiday_uplift = st.sidebar.slider(
+    "Holiday Sales Uplift (%)",
+    min_value=5,
+    max_value=50,
+    step=5,
+    value=15
+) if simulate_holiday else 0
+
+if horizon > 180:
+    st.sidebar.warning("⚠️ Long forecast horizons increase uncertainty.")
 
 # --------------------------------------------------
 # FILTER STORE DATA
@@ -66,48 +78,60 @@ st.sidebar.info(
 store_df = (
     df[df["Store"] == store_id]
     .sort_values("Date")
-    [["Date", "Sales"]]
+    [["Date", "Sales", "Promo"]]
     .set_index("Date")
 )
 
+recent_history = store_df.tail(history_window)
+last_date = store_df.index[-1]
+
 # --------------------------------------------------
-# MAIN LAYOUT
+# STORE CLUSTERING
+# --------------------------------------------------
+clusters = cluster_stores(df)
+store_cluster = clusters.loc[
+    clusters["Store"] == store_id, "Cluster"
+].values[0]
+
+# --------------------------------------------------
+# LAYOUT
 # --------------------------------------------------
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    st.subheader(f"📊 Historical Sales — Store {store_id}")
-    st.line_chart(store_df)
+    st.subheader(f"📊 Recent Sales — Store {store_id}")
+    st.line_chart(recent_history["Sales"])
 
 with col2:
-    st.subheader("📌 Store Summary")
-    st.metric("Average Daily Sales", f"{int(store_df['Sales'].mean()):,}")
-    st.metric("Maximum Daily Sales", f"{int(store_df['Sales'].max()):,}")
-    st.metric("Data Points", len(store_df))
+    st.subheader("🏪 Store Insights")
+    st.metric("Avg Daily Sales", f"{int(store_df['Sales'].mean()):,}")
+    st.metric("Store Cluster", int(store_cluster))
+    st.metric("Last Data Date", last_date.strftime("%Y-%m-%d"))
 
 st.divider()
 
 # --------------------------------------------------
 # FORECAST SECTION
 # --------------------------------------------------
-st.subheader("🔮 Sales Forecast with Confidence Intervals")
+st.subheader("🔮 Sales Forecast")
+
+st.caption(
+    f"Forecast starts from **{last_date.strftime('%Y-%m-%d')}** "
+    f"and extends **{horizon} days into the future**."
+)
 
 if st.button("Generate Forecast"):
 
     with st.spinner("Generating forecast..."):
 
-        # =======================
-        # SARIMA FORECAST
-        # =======================
-        if "SARIMA" in model_choice:
+        if model_choice == "SARIMA":
             model = load_sarima()
-
             forecast_res = model.get_forecast(steps=horizon)
             mean_forecast = forecast_res.predicted_mean
             conf_int = forecast_res.conf_int()
 
             future_dates = pd.date_range(
-                start=store_df.index[-1] + pd.Timedelta(days=1),
+                start=last_date + pd.Timedelta(days=1),
                 periods=horizon
             )
 
@@ -118,16 +142,8 @@ if st.button("Generate Forecast"):
                 "Upper Bound": conf_int.iloc[:, 1].values
             })
 
-        # =======================
-        # PROPHET FORECAST
-        # =======================
         else:
             model = load_prophet()
-
-            prophet_df = store_df.reset_index().rename(
-                columns={"Date": "ds", "Sales": "y"}
-            )
-
             future = model.make_future_dataframe(periods=horizon)
             forecast = model.predict(future)
 
@@ -136,21 +152,25 @@ if st.button("Generate Forecast"):
             ].tail(horizon)
 
             forecast_df.columns = [
-                "Date",
-                "Predicted Sales",
-                "Lower Bound",
-                "Upper Bound"
+                "Date", "Predicted Sales", "Lower Bound", "Upper Bound"
             ]
 
+        # Holiday simulation
+        if simulate_holiday:
+            forecast_df = apply_holiday_uplift(
+                forecast_df, holiday_uplift
+            )
+            st.success(f"Holiday simulation applied (+{holiday_uplift}%)")
+
     # --------------------------------------------------
-    # PLOT WITH CONFIDENCE INTERVAL
+    # PLOT
     # --------------------------------------------------
     fig, ax = plt.subplots(figsize=(10, 4))
 
     ax.plot(
-        store_df.index,
-        store_df["Sales"],
-        label="Historical Sales",
+        recent_history.index,
+        recent_history["Sales"],
+        label="Recent Historical Sales",
         color="black"
     )
 
@@ -165,34 +185,35 @@ if st.button("Generate Forecast"):
         forecast_df["Date"],
         forecast_df["Lower Bound"],
         forecast_df["Upper Bound"],
-        color="blue",
         alpha=0.2,
         label="Confidence Interval"
     )
 
     ax.set_title("Sales Forecast with Uncertainty")
-    ax.set_xlabel("Date")
-    ax.set_ylabel("Sales")
     ax.legend()
 
     st.pyplot(fig)
 
     # --------------------------------------------------
-    # DOWNLOAD
+    # FORECAST SUMMARY TABLE (FIXED)
     # --------------------------------------------------
-    st.download_button(
-        label="⬇️ Download Forecast CSV",
-        data=forecast_df.to_csv(index=False),
-        file_name=f"store_{store_id}_forecast_with_ci.csv",
-        mime="text/csv"
+    st.subheader("📋 Forecast Summary")
+
+    summary_df = pd.DataFrame({
+        "Metric": ["Mean Forecast", "Avg Lower Bound", "Avg Upper Bound"],
+        "Value": [
+            forecast_df["Predicted Sales"].mean(),
+            forecast_df["Lower Bound"].mean(),
+            forecast_df["Upper Bound"].mean()
+        ]
+    })
+
+    st.dataframe(
+        summary_df.style.format({"Value": "{:,.0f}"})
     )
 
-st.divider()
-
-# --------------------------------------------------
-# FOOTER
-# --------------------------------------------------
-st.caption(
-    "Forecasts are estimates and include uncertainty bands. "
-    "Built with Python, SARIMA, Prophet & Streamlit."
-)
+    st.download_button(
+        "⬇️ Download Forecast CSV",
+        forecast_df.to_csv(index=False),
+        f"store_{store_id}_forecast.csv"
+    )
